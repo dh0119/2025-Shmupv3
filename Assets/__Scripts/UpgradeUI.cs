@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems;
 
 public class UpgradeUI : MonoBehaviour
 {
@@ -70,6 +71,8 @@ public class UpgradeUI : MonoBehaviour
         {
             rootPanel.SetActive(true);
         }
+
+        EventSystem.current.SetSelectedGameObject(null);
 
         button1Text.text = FormatUpgradeName(currentOptions[0]);
         button2Text.text = FormatUpgradeName(currentOptions[1]);

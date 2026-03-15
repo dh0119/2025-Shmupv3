@@ -25,9 +25,6 @@ public class Main : MonoBehaviour
     [Header("Boss")]
     public GameObject bossPrefab;
 
-    [Header("Upgrade Debug")]
-    public bool autoPickUpgradeForNow = true;
-
     [Header("Inscribed")]
     public bool spawnEnemies = true;
     public GameObject[] prefabEnemies;               // Array of Enemy prefabs
@@ -269,29 +266,28 @@ void SpawnBoss()
 }
 
 public void ShowUpgradeSelection(ePowerUpDropType dropType)
+{
+    if (GAME_PAUSED) return;
+
+    GAME_PAUSED = true;
+    Debug.Log("Upgrade selection opened: " + dropType);
+
+    List<string> options = GenerateUpgradeOptions(dropType);
+
+    if (UpgradeUI.S != null)
     {
-        if (GAME_PAUSED) return;
-
-        GAME_PAUSED = true;
-        Debug.Log("Upgrade selection opened: " + dropType);
-
-        List<string> options = GenerateUpgradeOptions(dropType);
-
-        Debug.Log("Option 1: " + options[0]);
-        Debug.Log("Option 2: " + options[1]);
-        Debug.Log("Option 3: " + options[2]);
-
-        if (autoPickUpgradeForNow)
-        {
-            int ndx = Random.Range(0, options.Count);
-            string chosen = options[ndx];
-
-            Debug.Log("Auto-picked: " + chosen);
-            Hero.S.ApplyUpgrade(chosen);
-
-            ResumeGameplay();
-        }
+        UpgradeUI.S.ShowOptions(options);
     }
+    else
+    {
+        Debug.LogWarning("UpgradeUI.S is null. Falling back to auto-pick.");
+
+        int ndx = Random.Range(0, options.Count);
+        string chosen = options[ndx];
+        Hero.S.ApplyUpgrade(chosen);
+        ResumeGameplay();
+    }
+}
 
     public void ResumeGameplay()
     {
