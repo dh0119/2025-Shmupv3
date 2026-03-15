@@ -73,7 +73,7 @@ public class Enemy : MonoBehaviour
             if (bndCheck.isOnScreen)
             {                                      
                 // Get the damage amount from the Main WEAP_DICT.
-                health -= Main.GET_WEAPON_DEFINITION(p.type).damageOnHit;
+                health -= p.damageOnHit;
                 if (health <= 0)
                 {
                     if (!calledShipDestroyed)

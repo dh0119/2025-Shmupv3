@@ -113,50 +113,112 @@ public class Weapon : MonoBehaviour
     }
 
     private void Fire()
+{
+    if (Main.GAME_PAUSED) return;
+    if (!gameObject.activeInHierarchy) return;
+    if (Time.time < nextShotTime) return;
+
+    Hero hero = GetComponentInParent<Hero>();
+    int projectileBonus = 0;
+
+    if (hero != null)
     {
-        // If this.gameObject is inactive, return
-        if (!gameObject.activeInHierarchy) return;                         // i
-        // If it hasn’t been enough time between shots, return
-        if (Time.time < nextShotTime) return;                              // j
+        projectileBonus = hero.projectileBonus;
+    }
 
-        ProjectileHero p;
-        Vector3 vel = Vector3.up * def.velocity;
+    Vector3 vel = Vector3.up * def.velocity;
 
-        switch (type)
-        {                                                      // k
-            case eWeaponType.blaster:
-                p = MakeProjectile();
-                p.vel = vel;
-                break;
+    switch (type)
+    {
+        case eWeaponType.blaster:
+        {
+            ProjectileHero p = MakeProjectile();
+            p.vel = vel;
 
-            case eWeaponType.spread:                                         // l
-                p = MakeProjectile();
-                p.vel = vel;
-                p = MakeProjectile();
-                p.transform.rotation = Quaternion.AngleAxis(10, Vector3.back);
+            List<float> extraAngles = GetBonusShotAngles(projectileBonus);
+            foreach (float angle in extraAngles)
+            {
+                ProjectileHero extraP = MakeProjectile();
+                extraP.transform.rotation = Quaternion.AngleAxis(angle, Vector3.back);
+                extraP.vel = extraP.transform.rotation * vel;
+            }
+            break;
+        }
+
+        case eWeaponType.spread:
+        {
+            List<float> baseAngles = new List<float>() { 0f, 10f, -10f };
+
+            foreach (float angle in baseAngles)
+            {
+                ProjectileHero p = MakeProjectile();
+                p.transform.rotation = Quaternion.AngleAxis(angle, Vector3.back);
                 p.vel = p.transform.rotation * vel;
-                p = MakeProjectile();
-                p.transform.rotation = Quaternion.AngleAxis(-10, Vector3.back);
-                p.vel = p.transform.rotation * vel;
-                break;
+            }
 
+            List<float> extraAngles = GetBonusShotAngles(projectileBonus);
+            foreach (float angle in extraAngles)
+            {
+                ProjectileHero extraP = MakeProjectile();
+                extraP.transform.rotation = Quaternion.AngleAxis(angle, Vector3.back);
+                extraP.vel = extraP.transform.rotation * vel;
+            }
+            break;
         }
     }
+}
+
+    List<float> GetBonusShotAngles(int projectileBonus)
+{
+    List<float> angles = new List<float>();
+
+    if (projectileBonus <= 0) return angles;
+
+    float step = 8f;
+
+    for (int i = 1; i <= projectileBonus; i++)
+    {
+        int pairIndex = (i + 1) / 2;
+        float angle = step * pairIndex;
+
+        if (i % 2 == 1)
+            angles.Add(-angle);
+        else
+            angles.Add(angle);
+    }
+
+    return angles;
+}
 
     private ProjectileHero MakeProjectile()
-    {                                 // m
-        GameObject go;
-        go = Instantiate<GameObject>(def.projectilePrefab, PROJECTILE_ANCHOR); // n
-        ProjectileHero p = go.GetComponent<ProjectileHero>();
+{
+    GameObject go;
+    go = Instantiate<GameObject>(def.projectilePrefab, PROJECTILE_ANCHOR);
+    ProjectileHero p = go.GetComponent<ProjectileHero>();
 
-        Vector3 pos = shotPointTrans.position;
-        pos.z = 0;                                                            // o
-        p.transform.position = pos;
+    Vector3 pos = shotPointTrans.position;
+    pos.z = 0;
+    p.transform.position = pos;
 
-        p.type = type;
-        nextShotTime = Time.time + def.delayBetweenShots;                    // p
-        return (p);
+    p.type = type;
+
+    Hero hero = GetComponentInParent<Hero>();
+    float fireRateMultiplier = 1f;
+    float damageMultiplier = 1f;
+
+    if (hero != null)
+    {
+        fireRateMultiplier = hero.fireRateMultiplier;
+        damageMultiplier = hero.damageMultiplier;
     }
+
+    p.damageOnHit = def.damageOnHit * damageMultiplier;
+
+    float adjustedDelay = def.delayBetweenShots / fireRateMultiplier;
+    nextShotTime = Time.time + adjustedDelay;
+
+    return p;
+}
 }
 
 

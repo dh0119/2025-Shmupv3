@@ -12,6 +12,7 @@ public class ProjectileHero : MonoBehaviour
     public Rigidbody rigid;
     [SerializeField]                                                         // a
     private eWeaponType _type;
+    public float damageOnHit = 0f;
 
 
     // This public property masks the private field _type
@@ -47,6 +48,7 @@ public class ProjectileHero : MonoBehaviour
         _type = eType;
         WeaponDefinition def = Main.GET_WEAPON_DEFINITION(_type);
         rend.material.color = def.projectileColor;
+        damageOnHit = def.damageOnHit;
     }
 
     /// <summary>
