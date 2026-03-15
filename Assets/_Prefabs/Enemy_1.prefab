@@ -93,10 +93,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67eaeaacb965241139ed0c6862a47387, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 9
   fireRate: 0.3
-  health: 10
-  score: 100
+  health: 16
+  score: 30
+  powerUpDropChance: 0.18
+  enemyLevel: 2
+  isBoss: 0
+  killValue: 1
   waveFrequency: 2
   waveWidth: 4
   waveRotY: 45

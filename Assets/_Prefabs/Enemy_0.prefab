@@ -117,10 +117,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4d869d0cd0d2499ebbf34cebd23f3b8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 7
   fireRate: 0.3
-  health: 10
-  score: 100
+  health: 8
+  score: 10
+  powerUpDropChance: 0.15
+  enemyLevel: 1
+  isBoss: 0
+  killValue: 1
 --- !u!114 &4413574950116602420
 MonoBehaviour:
   m_ObjectHideFlags: 0

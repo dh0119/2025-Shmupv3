@@ -24,6 +24,16 @@ public class Hero : MonoBehaviour
     [Tooltip("This field holds a reference to the last triggering GameObject")]
     private GameObject lastTriggerGo = null;
 
+    [Header("Upgrade Stats")]
+    public int projectileBonus = 0;
+    public float fireRateMultiplier = 1f;
+    public float damageMultiplier = 1f;
+
+    public bool missileUnlocked = false;
+    public bool phaserUnlocked = false;
+    public bool laserUnlocked = false;
+    public bool combineWeaponsUnlocked = false;
+
     // Declare a new delegate type WeaponFireDelegate
     public delegate void WeaponFireDelegate();                                // a     // Create a WeaponFireDelegate event named fireEvent.
     public event WeaponFireDelegate fireEvent;
@@ -49,6 +59,8 @@ public class Hero : MonoBehaviour
 
     void Update()
     {
+        if (Main.GAME_PAUSED) return;
+
         // Pull in information from the Input class
         float hAxis = Input.GetAxis("Horizontal");                            // d
         float vAxis = Input.GetAxis("Vertical");                              // d
@@ -111,7 +123,7 @@ public class Hero : MonoBehaviour
         }
         else if (pUp != null)
         {
-            AbsorbPowerUp(pUp);
+            CollectUpgradeCrate(pUp);
         }
         else
         {
@@ -161,34 +173,60 @@ public class Hero : MonoBehaviour
         }
     }
 
-    public void AbsorbPowerUp(PowerUp pUp)
+public void CollectUpgradeCrate(PowerUp pUp)
+{
+    Main.S.ShowUpgradeSelection(pUp.dropType);
+    pUp.AbsorbedBy(this.gameObject);
+}
+
+public void ApplyUpgrade(string upgradeId)
+{
+    Debug.Log("Applying upgrade: " + upgradeId);
+
+    switch (upgradeId)
     {
-        Debug.Log("Absorbed PowerUp: " + pUp.type);                         // b
-        switch (pUp.type)
-        {
-            case eWeaponType.shield:                                              // a 
-                shieldLevel++;
-                break;
+        case "projectile":
+            projectileBonus += 1;
+            break;
 
-            default:                                                             // b
-                if (pUp.type == weapons[0].type)
-                { // If it is the same type     // c
-                    Weapon weap = GetEmptyWeaponSlot();
-                    if (weap != null)
-                    {
-                        // Set it to pUp.type
-                        weap.SetType(pUp.type);
-                    }
-                }
-                else
-                { // If this is a different weapon type                   // d
-                    ClearWeapons();
-                    weapons[0].SetType(pUp.type);
-                }
-                break;
+        case "firerate":
+            fireRateMultiplier *= 1.2f;
+            break;
 
-        }
-        pUp.AbsorbedBy(this.gameObject);
+        case "damage":
+            damageMultiplier *= 1.2f;
+            break;
+
+        case "missile":
+            missileUnlocked = true;
+            break;
+
+        case "phaser":
+            phaserUnlocked = true;
+            break;
+
+        case "laser":
+            laserUnlocked = true;
+            break;
+
+        case "shield":
+            shieldLevel += 1;
+            break;
+
+        case "combine":
+            combineWeaponsUnlocked = true;
+            break;
     }
+
+    Debug.Log(
+        "Upgrades => ProjectileBonus: " + projectileBonus +
+        " | FireRate x" + fireRateMultiplier +
+        " | Damage x" + damageMultiplier +
+        " | Missile: " + missileUnlocked +
+        " | Phaser: " + phaserUnlocked +
+        " | Laser: " + laserUnlocked +
+        " | Combine: " + combineWeaponsUnlocked
+    );
+}
 
 }

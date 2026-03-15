@@ -2,6 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+public enum ePowerUpDropType
+{
+    normalCrate,
+    bossCrate
+}
+
 [RequireComponent(typeof(BoundsCheck))]                                     // a
 public class PowerUp : MonoBehaviour
 {
@@ -15,7 +22,7 @@ public class PowerUp : MonoBehaviour
     public float fadeTime = 4;  // Then it fades over # seconds
 
     [Header("Dynamic")]
-    public eWeaponType _type;          // The type of the PowerUp 
+    public ePowerUpDropType dropType = ePowerUpDropType.normalCrate;
     public GameObject cube;          // Reference to the PowerCube child
     public TextMesh letter;        // Reference to the TextMesh
     public Vector3 rotPerSecond;  // Euler rotation speed for PowerCube 
@@ -59,6 +66,8 @@ public class PowerUp : MonoBehaviour
 
     void Update()
     {
+        if (Main.GAME_PAUSED) return;
+
         cube.transform.rotation = Quaternion.Euler(rotPerSecond * Time.time); // f
 
         // Fade out the PowerUp over time
@@ -90,20 +99,20 @@ public class PowerUp : MonoBehaviour
         }
     }
 
-    public eWeaponType type
+    public void SetDropType(ePowerUpDropType dt)
     {
-        get { return _type; }
-        set { SetType(value); }
-    } 
+        dropType = dt;
 
-    public void SetType(eWeaponType wt)
-    {
-        // Grab the WeaponDefinition from Main
-        WeaponDefinition def = Main.GET_WEAPON_DEFINITION(wt);
-        cubeMat.color = def.powerUpColor;  // Set the color of PowerCube
-                                           //letter.color = def.color;        // We could colorize the letter too
-        letter.text = def.letter;          // Set the letter that is shown
-        _type = wt;                         // Finally actually set the type
+        if (dt == ePowerUpDropType.bossCrate)
+        {
+            cubeMat.color = Color.yellow;
+            letter.text = "B";
+        }
+        else
+        {
+            cubeMat.color = Color.cyan;
+            letter.text = "U";
+        }
     }
 
     /// <summary>

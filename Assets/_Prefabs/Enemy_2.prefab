@@ -117,10 +117,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c99fab975feb4c0caca1e6e2b108867, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 10
+  speed: 11
   fireRate: 0.3
-  health: 10
-  score: 100
+  health: 28
+  score: 50
+  powerUpDropChance: 0.22
+  enemyLevel: 3
+  isBoss: 0
+  killValue: 1
   lifeTime: 10
   sinEccentricity: 0.6
   rotCurve:

@@ -12,7 +12,12 @@ public class Enemy : MonoBehaviour
     public float fireRate = 0.3f;  // Seconds/shot (Unused)
     public float health = 10;    // Damage needed to destroy this enemy
     public int score = 100;   // Points earned for destroying this
-    public float powerUpDropChance = 1f;
+    public float powerUpDropChance = 0.15f;
+
+    [Header("Enemy Progression")]
+    public int enemyLevel = 1;
+    public bool isBoss = false;
+    public int killValue = 1;
 
 
     // private BoundsCheck bndCheck;                                             // b
@@ -39,14 +44,13 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
+        if (Main.GAME_PAUSED) return;
+
         Move();
 
-        // Check whether this Enemy has gone off the bottom of the screen
-        if (bndCheck.LocIs(BoundsCheck.eScreenLocs.offDown))
+        if (!isBoss && bndCheck.LocIs(BoundsCheck.eScreenLocs.offDown))
         {
-            Destroy(gameObject);
-
-
+        Destroy(gameObject);
         }
     }
 

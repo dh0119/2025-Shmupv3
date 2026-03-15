@@ -6,9 +6,27 @@ using UnityEngine.SceneManagement;   // Enables the loading & reloading of scene
 [RequireComponent(typeof(BoundsCheck))]
 public class Main : MonoBehaviour
 {
-    static private Main S;                        // A private singleton for Main
+    static public Main S;                        // A private singleton for Main
     static private Dictionary<eWeaponType, WeaponDefinition> WEAP_DICT;
+    public static bool GAME_PAUSED = false;
 
+    [Header("Run Progress")]
+    public int score = 0;
+    public int totalKills = 0;
+    public int difficultyTier = 1;
+    public bool bossActive = false;
+
+    [Header("Difficulty Settings")]
+    public int killsPerTier = 30;
+    public int killsPerBoss = 60;
+    public float spawnRateIncreasePerTier = 0.12f;
+    public float speedIncreasePerTier = 0.10f;
+
+    [Header("Boss")]
+    public GameObject bossPrefab;
+
+    [Header("Upgrade Debug")]
+    public bool autoPickUpgradeForNow = true;
 
     [Header("Inscribed")]
     public bool spawnEnemies = true;
@@ -23,6 +41,23 @@ public class Main : MonoBehaviour
                                      eWeaponType.spread,  eWeaponType.shield };
     private BoundsCheck bndCheck;
 
+    GameObject GetRandomEnemyForTier()
+{
+    List<GameObject> pool = new List<GameObject>();
+
+    if (prefabEnemies.Length > 0) pool.Add(prefabEnemies[0]); // level 1 basic
+
+    if (difficultyTier >= 1 && prefabEnemies.Length > 1) pool.Add(prefabEnemies[1]);
+    if (difficultyTier >= 2 && prefabEnemies.Length > 2) pool.Add(prefabEnemies[2]);
+    if (difficultyTier >= 3 && prefabEnemies.Length > 3) pool.Add(prefabEnemies[3]);
+    if (difficultyTier >= 4 && prefabEnemies.Length > 4) pool.Add(prefabEnemies[4]);
+
+    if (pool.Count == 0) return null;
+
+    int ndx = Random.Range(0, pool.Count);
+    return pool[ndx];
+}
+
     void Awake()
     {
         S = this;
@@ -31,7 +66,7 @@ public class Main : MonoBehaviour
         bndCheck = GetComponent<BoundsCheck>();
 
         // Invoke SpawnEnemy() once (in 2 seconds, based on default values)
-        Invoke(nameof(SpawnEnemy), 1f / enemySpawnPerSecond);                // a
+        Invoke(nameof(SpawnEnemy), CurrentSpawnDelay);                // a
 
         // A generic Dictionary with eWeaponType as the key
         WEAP_DICT = new Dictionary<eWeaponType, WeaponDefinition>();          // a
@@ -42,24 +77,58 @@ public class Main : MonoBehaviour
 
     }
 
+    public float CurrentSpawnDelay
+    {
+        get
+        {
+            float currentSpawnRate = enemySpawnPerSecond * Mathf.Pow(1f + spawnRateIncreasePerTier, difficultyTier - 1);
+            return 1f / currentSpawnRate;
+        }
+    }
+
+    public float CurrentEnemySpeedMultiplier
+    {
+        get
+        {
+            return Mathf.Pow(1f + speedIncreasePerTier, difficultyTier - 1);
+        }
+    }
+
+
     public void SpawnEnemy()
     {
-        // If spawnEnemies is false, skip to the next invoke of SpawnEnemy()
-        if (!spawnEnemies)
+        if (GAME_PAUSED)
         {                                                // c
-            Invoke(nameof(SpawnEnemy), 1f / enemySpawnPerSecond);
+            Invoke(nameof(SpawnEnemy), 0.25f);
             return;
         }
 
-        // Pick a random Enemy prefab to instantiate
-        int ndx = Random.Range(0, prefabEnemies.Length);                     // b
-        GameObject go = Instantiate<GameObject>(prefabEnemies[ndx]);     // c
+        if (!spawnEnemies)
+        {
+            Invoke(nameof(SpawnEnemy), CurrentSpawnDelay);
+            return;
+        }
 
-        // Position the Enemy above the screen with a random x position
-        float enemyInset = enemyInsetDefault;                                // d
-        if (go.GetComponent<BoundsCheck>() != null)
-        {                        // e
-            enemyInset = Mathf.Abs(go.GetComponent<BoundsCheck>().radius);
+        if(bossActive)
+        {
+            Invoke(nameof(SpawnEnemy), 0.5f);
+            return;
+        }
+
+        GameObject prefabToSpawn = GetRandomEnemyForTier();
+        if(prefabToSpawn == null)
+        {
+            Invoke(nameof(SpawnEnemy), CurrentSpawnDelay);
+            return;
+        }
+
+        GameObject go = Instantiate(prefabToSpawn);
+
+        float enemyInset = enemyInsetDefault;
+        BoundsCheck enemyBounds = go.GetComponent<BoundsCheck>();
+        if (enemyBounds != null)
+        {
+            enemyInset = Mathf.Abs(enemyBounds.radius);
         }
 
         // Set the initial position for the spawned Enemy                    // f
@@ -69,8 +138,14 @@ public class Main : MonoBehaviour
         pos.x = Random.Range(xMin, xMax);
         pos.y = bndCheck.camHeight + enemyInset;
         go.transform.position = pos;
+
+        Enemy enemy = go.GetComponent<Enemy>();
+        if (enemy != null)
+        {
+            enemy.speed *= CurrentEnemySpeedMultiplier;
+        }
         // Invoke SpawnEnemy() again
-        Invoke(nameof(SpawnEnemy), 1f / enemySpawnPerSecond);                // g
+        Invoke(nameof(SpawnEnemy), CurrentSpawnDelay);                // g
     }
 
     void DelayedRestart()
@@ -116,23 +191,81 @@ public class Main : MonoBehaviour
     /// </summary>
     /// <param name="e"The Enemy that was destroyed</param
     static public void SHIP_DESTROYED(Enemy e)
+{
+    if (S == null || e == null) return;
+
+    // Add score
+    S.score += e.score;
+
+    // Count kills
+    if (!e.isBoss)
     {
-        // Potentially generate a PowerUp
-        if (Random.value <= e.powerUpDropChance)
-        { // Underlined red for now  // c
-          // Choose a PowerUp from the possibilities in powerUpFrequency
-            int ndx = Random.Range(0, S.powerUpFrequency.Length);           // d
-            eWeaponType pUpType = S.powerUpFrequency[ndx];
+        S.totalKills += e.killValue;
 
-            // Spawn a PowerUp
-            GameObject go = Instantiate<GameObject>(S.prefabPowerUp);
+        S.CheckDifficultyIncrease();
+        S.CheckBossSpawn();
+    }
+    else
+    {
+        S.bossActive = false;
+        Debug.Log("Boss defeated!");
+    }
+
+
+    if (!e.isBoss && Random.value <= e.powerUpDropChance)
+        {
+            GameObject go = Instantiate(S.prefabPowerUp);
             PowerUp pUp = go.GetComponent<PowerUp>();
-            // Set it to the proper WeaponType
-            pUp.SetType(pUpType);                                           // e
-
-            // Set it to the position of the destroyed ship
+            pUp.SetDropType(ePowerUpDropType.normalCrate);
             pUp.transform.position = e.transform.position;
         }
+
+    if (e.isBoss)
+        {
+            GameObject go = Instantiate(S.prefabPowerUp);
+            PowerUp pUp = go.GetComponent<PowerUp>();
+            pUp.SetDropType(ePowerUpDropType.bossCrate);
+            pUp.transform.position = e.transform.position;
+        }
+}
+
+    void CheckDifficultyIncrease()
+    {
+        int targetTier = Mathf.Min(4, (totalKills / killsPerTier) + 1);
+        if (targetTier > difficultyTier)
+        {
+            difficultyTier = targetTier;
+            Debug.Log("Difficulty increased to Tier " + difficultyTier);
+        }
     }
+
+    void CheckBossSpawn()
+{
+    if (bossActive) return;
+    if (bossPrefab == null) return;
+
+    if (totalKills > 0 && totalKills % killsPerBoss == 0)
+    {
+        SpawnBoss();
+    }
+}
+
+void SpawnBoss()
+{
+    if (bossActive) return;
+    if (bossPrefab == null) return;
+
+    bossActive = true;
+
+    GameObject go = Instantiate(bossPrefab);
+
+    float inset = 2f;
+    Vector3 pos = Vector3.zero;
+    pos.x = 0;
+    pos.y = bndCheck.camHeight - inset;
+    go.transform.position = pos;
+
+    Debug.Log("Boss spawned!");
+}
 
 }
