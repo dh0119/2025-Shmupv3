@@ -268,4 +268,72 @@ void SpawnBoss()
     Debug.Log("Boss spawned!");
 }
 
+public void ShowUpgradeSelection(ePowerUpDropType dropType)
+    {
+        if (GAME_PAUSED) return;
+
+        GAME_PAUSED = true;
+        Debug.Log("Upgrade selection opened: " + dropType);
+
+        List<string> options = GenerateUpgradeOptions(dropType);
+
+        Debug.Log("Option 1: " + options[0]);
+        Debug.Log("Option 2: " + options[1]);
+        Debug.Log("Option 3: " + options[2]);
+
+        if (autoPickUpgradeForNow)
+        {
+            int ndx = Random.Range(0, options.Count);
+            string chosen = options[ndx];
+
+            Debug.Log("Auto-picked: " + chosen);
+            Hero.S.ApplyUpgrade(chosen);
+
+            ResumeGameplay();
+        }
+    }
+
+    public void ResumeGameplay()
+    {
+        GAME_PAUSED = false;
+        Debug.Log("Gameplay resumed");
+    }
+
+    List<string> GenerateUpgradeOptions(ePowerUpDropType dropType)
+    {
+        List<string> pool = new List<string>();
+
+        Hero hero = Hero.S;
+
+        pool.Add("projectile");
+        pool.Add("firerate");
+        pool.Add("damage");
+        pool.Add("shield");
+
+        if (!hero.missileUnlocked) pool.Add("missile");
+        if (!hero.phaserUnlocked) pool.Add("phaser");
+        if (!hero.laserUnlocked) pool.Add("laser");
+
+        if(dropType == ePowerUpDropType.bossCrate && !hero.combineWeaponsUnlocked)
+        {
+            pool.Add("combine");
+        }
+
+        List<string> result = new List<string>();
+
+        while (result.Count < 3 && pool.Count > 0)
+            {
+                int ndx = Random.Range(0, pool.Count);
+                result.Add(pool[ndx]);
+                pool.RemoveAt(ndx);
+            }
+
+        while (result.Count < 3)
+            {
+                result.Add("damage");
+            }
+
+        return result;
+    }
+
 }
