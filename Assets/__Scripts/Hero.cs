@@ -104,32 +104,56 @@ public class Hero : MonoBehaviour
     //}
 
     void OnTriggerEnter(Collider other)
+{
+    GameObject directGO = other.gameObject;
+    GameObject rootGO = other.transform.root.gameObject;
+
+    // Prevent repeated trigger spam from the exact same object
+    if (rootGO == lastTriggerGo || directGO == lastTriggerGo) return;
+
+    Enemy enemy = rootGO.GetComponent<Enemy>();
+    if (enemy == null) enemy = directGO.GetComponent<Enemy>();
+
+    PowerUp pUp = rootGO.GetComponent<PowerUp>();
+    if (pUp == null) pUp = directGO.GetComponent<PowerUp>();
+
+    EnemyProjectile enemyProj = directGO.GetComponent<EnemyProjectile>();
+    if (enemyProj == null) enemyProj = rootGO.GetComponent<EnemyProjectile>();
+
+    if (enemy != null)
     {
-        Transform rootT = other.gameObject.transform.root;                    // a
-        GameObject go = rootT.gameObject;
-        //Debug.Log("Shield trigger hit by: " + go.gameObject.name);
+        lastTriggerGo = rootGO;
+        shieldLevel--;
 
-        // Make sure it’s not the same triggering go as last time
-        if (go == lastTriggerGo) return;                                    // c
-        lastTriggerGo = go;                                                   // d
-
-        Enemy enemy = go.GetComponent<Enemy>();                               // e
-        PowerUp pUp = go.GetComponent<PowerUp>();
-
-        if (enemy != null)
-        {  // If the shield was triggered by an enemy
-            shieldLevel--;        // Decrease the level of the shield by 1
-            Destroy(go);          // … and Destroy the enemy                  // f
-        }
-        else if (pUp != null)
+        if (!enemy.isBoss)
         {
-            CollectUpgradeCrate(pUp);
-        }
-        else
-        {
-            Debug.LogWarning("Shield trigger hit by non-Enemy: " + go.name);    // g
+            Destroy(rootGO);
         }
     }
+    else if (enemyProj != null)
+    {
+        lastTriggerGo = directGO;
+        Debug.Log("Hero hit by enemy projectile: " + directGO.name);
+        shieldLevel -= enemyProj.damage;
+        Destroy(rootGO);
+    }
+    else if (pUp != null)
+    {
+        lastTriggerGo = rootGO;
+        CollectUpgradeCrate(pUp);
+    }
+    else
+    {
+        Debug.LogWarning("Shield trigger hit by unknown object: " + directGO.name);
+    }
+}
+    void OnTriggerExit(Collider other)
+{
+    if (other.gameObject == lastTriggerGo || other.transform.root.gameObject == lastTriggerGo)
+    {
+        lastTriggerGo = null;
+    }
+}
 
     public float shieldLevel
     {

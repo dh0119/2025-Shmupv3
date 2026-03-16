@@ -256,11 +256,18 @@ void SpawnBoss()
 
     GameObject go = Instantiate(bossPrefab);
 
-    float inset = 2f;
-    Vector3 pos = Vector3.zero;
-    pos.x = 0;
-    pos.y = bndCheck.camHeight - inset;
-    go.transform.position = pos;
+    Vector3 spawnPos = Vector3.zero;
+    spawnPos.x = 0f;
+    spawnPos.y = bndCheck.camHeight + 2f;
+    go.transform.position = spawnPos;
+
+    Enemy enemy = go.GetComponent<Enemy>();
+    if (enemy != null)
+        {
+            enemy.isBoss = true;
+            enemy.score = 500;
+            enemy.powerUpDropChance = 1f;
+        }
 
     Debug.Log("Boss spawned!");
 }
