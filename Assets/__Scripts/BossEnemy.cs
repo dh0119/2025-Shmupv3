@@ -18,7 +18,8 @@ public class BossEnemy : Enemy
     private float nextFireTime = 0f;
 
     private int currentPhase = 1;
-    private float maxHealth = 500f;
+    [SerializeField] private float maxHealth = 500f;
+    public float MaxHealth => maxHealth;
     private bool fireAltPattern = false;
 
     void Start()
@@ -55,35 +56,35 @@ public class BossEnemy : Enemy
     switch (currentPhase)
     {
         case 1:
-            fireRate = 1.2f;
+            fireRate = 2.0f;
             horizontalAmplitude = 3.5f;
             horizontalFrequency = 0.8f;
             projectileSpeed = 8f;
             break;
 
         case 2:
-            fireRate = 1.0f;
+            fireRate = 1.8f;
             horizontalAmplitude = 4.5f;
             horizontalFrequency = 1.0f;
             projectileSpeed = 9f;
             break;
 
         case 3:
-            fireRate = 0.8f;
+            fireRate = 1.6f;
             horizontalAmplitude = 5.5f;
             horizontalFrequency = 1.2f;
             projectileSpeed = 10f;
             break;
 
         case 4:
-            fireRate = 0.65f;
+            fireRate = 1.5f;
             horizontalAmplitude = 6.0f;
             horizontalFrequency = 1.4f;
             projectileSpeed = 11f;
             break;
 
         case 5:
-            fireRate = 0.5f;
+            fireRate = 1.5f;
             horizontalAmplitude = 6.5f;
             horizontalFrequency = 1.7f;
             projectileSpeed = 12f;

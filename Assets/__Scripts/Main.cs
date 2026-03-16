@@ -24,6 +24,7 @@ public class Main : MonoBehaviour
 
     [Header("Boss")]
     public GameObject bossPrefab;
+    public BossEnemy currentBoss;
 
     [Header("Inscribed")]
     public bool spawnEnemies = true;
@@ -151,7 +152,7 @@ public class Main : MonoBehaviour
         Invoke(nameof(Restart), gameRestartDelay);
     }
 
-    void Restart()
+    public void Restart()
     {
         // Reload __Scene_0 to restart the game
         // "__Scene_0" below starts with 2 underscores and ends with a zero.
@@ -159,9 +160,13 @@ public class Main : MonoBehaviour
     }
 
     static public void HERO_DIED()
+{
+    if (S != null)
     {
-        S.DelayedRestart();                                                  // b
+        S.spawnEnemies = false;
+        GAME_PAUSED = true;
     }
+}
 
     /// <summary>
     /// Static function that gets a WeaponDefinition from the WEAP_DICT static
@@ -223,6 +228,9 @@ public class Main : MonoBehaviour
             PowerUp pUp = go.GetComponent<PowerUp>();
             pUp.SetDropType(ePowerUpDropType.bossCrate);
             pUp.transform.position = e.transform.position;
+            S.bossActive = false;
+            S.bossActive = false;
+            S.currentBoss = null;
         }
 }
 
@@ -255,6 +263,12 @@ void SpawnBoss()
     bossActive = true;
 
     GameObject go = Instantiate(bossPrefab);
+
+    BossEnemy boss = go.GetComponent<BossEnemy>();
+if (boss != null)
+{
+    currentBoss = boss;
+}
 
     Vector3 spawnPos = Vector3.zero;
     spawnPos.x = 0f;
@@ -303,40 +317,63 @@ public void ShowUpgradeSelection(ePowerUpDropType dropType)
     }
 
     List<string> GenerateUpgradeOptions(ePowerUpDropType dropType)
+{
+    List<string> pool = new List<string>();
+
+    Hero hero = Hero.S;
+
+    pool.Add("projectile");
+    pool.Add("firerate");
+    pool.Add("damage");
+    pool.Add("shield");
+    pool.Add("speed");
+
+    if (!hero.missileUnlocked) pool.Add("missile");
+    if (!hero.phaserUnlocked) pool.Add("phaser");
+    if (!hero.laserUnlocked) pool.Add("laser");
+
+    if (dropType == ePowerUpDropType.bossCrate && !hero.combineWeaponsUnlocked)
     {
-        List<string> pool = new List<string>();
-
-        Hero hero = Hero.S;
-
-        pool.Add("projectile");
-        pool.Add("firerate");
-        pool.Add("damage");
-        pool.Add("shield");
-
-        if (!hero.missileUnlocked) pool.Add("missile");
-        if (!hero.phaserUnlocked) pool.Add("phaser");
-        if (!hero.laserUnlocked) pool.Add("laser");
-
-        if(dropType == ePowerUpDropType.bossCrate && !hero.combineWeaponsUnlocked)
-        {
-            pool.Add("combine");
-        }
-
-        List<string> result = new List<string>();
-
-        while (result.Count < 3 && pool.Count > 0)
-            {
-                int ndx = Random.Range(0, pool.Count);
-                result.Add(pool[ndx]);
-                pool.RemoveAt(ndx);
-            }
-
-        while (result.Count < 3)
-            {
-                result.Add("damage");
-            }
-
-        return result;
+        pool.Add("combine");
     }
+
+    List<string> result = new List<string>();
+
+    while (result.Count < 3 && pool.Count > 0)
+    {
+        int ndx = Random.Range(0, pool.Count);
+        result.Add(pool[ndx]);
+        pool.RemoveAt(ndx);
+    }
+
+    while (result.Count < 3)
+    {
+        result.Add("damage");
+    }
+
+    return result;
+}
+
+    public static Enemy GetClosestEnemy(Vector3 fromPos)
+{
+    Enemy[] enemies = GameObject.FindObjectsOfType<Enemy>();
+    Enemy closest = null;
+    float closestDist = float.MaxValue;
+
+    foreach (Enemy e in enemies)
+    {
+        if (e == null) continue;
+        if (e.isBoss == false && !e.gameObject.activeInHierarchy) continue;
+
+        float dist = Vector3.Distance(fromPos, e.transform.position);
+        if (dist < closestDist)
+        {
+            closestDist = dist;
+            closest = e;
+        }
+    }
+
+    return closest;
+}
 
 }

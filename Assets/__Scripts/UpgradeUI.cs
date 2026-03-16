@@ -130,6 +130,7 @@ public class UpgradeUI : MonoBehaviour
             case "projectile": return "+1 Projectile";
             case "firerate": return "+20% Fire Rate";
             case "damage": return "+20% Damage";
+            case "speed": return "+10% Move Speed";
             case "missile": return "Missile Unlock";
             case "phaser": return "Phaser Unlock";
             case "laser": return "Laser Unlock";

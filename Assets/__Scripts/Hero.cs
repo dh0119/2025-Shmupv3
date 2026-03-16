@@ -34,6 +34,9 @@ public class Hero : MonoBehaviour
     public bool laserUnlocked = false;
     public bool combineWeaponsUnlocked = false;
 
+    public float laserDuration = 10f;
+    private float laserExpireTime = -1f;
+
     // Declare a new delegate type WeaponFireDelegate
     public delegate void WeaponFireDelegate();                                // a     // Create a WeaponFireDelegate event named fireEvent.
     public event WeaponFireDelegate fireEvent;
@@ -61,6 +64,13 @@ public class Hero : MonoBehaviour
     {
         if (Main.GAME_PAUSED) return;
 
+        if (laserUnlocked && Time.time >= laserExpireTime)
+{
+    laserUnlocked = false;
+    RemoveWeaponType(eWeaponType.laser);
+    Debug.Log("Laser expired");
+}
+
         // Pull in information from the Input class
         float hAxis = Input.GetAxis("Horizontal");                            // d
         float vAxis = Input.GetAxis("Vertical");                              // d
@@ -81,10 +91,10 @@ public class Hero : MonoBehaviour
         //}
 
         // Use the fireEvent to fire Weapons when the Spacebar is pressed.
-        if (Input.GetAxis("Jump") == 1 && fireEvent != null)
-        {
-            fireEvent();
-        }
+if (Input.GetAxis("Jump") == 1 && fireEvent != null)
+{
+    fireEvent();
+}
 
     }
 
@@ -186,6 +196,27 @@ public class Hero : MonoBehaviour
         return (null);
     }
 
+    Weapon GetWeaponOfType(eWeaponType wt)
+{
+    for (int i = 0; i < weapons.Length; i++)
+    {
+        if (weapons[i].type == wt)
+        {
+            return weapons[i];
+        }
+    }
+    return null;
+}
+
+void RemoveWeaponType(eWeaponType wt)
+{
+    Weapon w = GetWeaponOfType(wt);
+    if (w != null)
+    {
+        w.SetType(eWeaponType.none);
+    }
+}
+
     /// <summary>
     /// Sets the type of all Weapon slots to none
     /// </summary>
@@ -221,17 +252,63 @@ public void ApplyUpgrade(string upgradeId)
             damageMultiplier *= 1.2f;
             break;
 
-        case "missile":
-            missileUnlocked = true;
+        case "speed":
+            speed *= 1.1f;
             break;
+
+        case "missile":
+        {
+            if (!missileUnlocked)
+            {
+                Weapon weap = GetEmptyWeaponSlot();
+                if (weap != null)
+                {
+                    weap.SetType(eWeaponType.missile);
+                    missileUnlocked = true;
+                }
+            }
+            break;
+        }
 
         case "phaser":
-            phaserUnlocked = true;
+        {
+            if (!phaserUnlocked)
+            {
+                Weapon weap = GetEmptyWeaponSlot();
+                if (weap != null)
+                {
+                    weap.SetType(eWeaponType.phaser);
+                    phaserUnlocked = true;
+                }
+            }
             break;
+        }
 
         case "laser":
+{
+    Weapon existingLaser = GetWeaponOfType(eWeaponType.laser);
+
+    if (existingLaser == null)
+    {
+        Weapon weap = GetEmptyWeaponSlot();
+        if (weap != null)
+        {
+            weap.SetType(eWeaponType.laser);
             laserUnlocked = true;
-            break;
+            laserExpireTime = Time.time + laserDuration;
+        }
+        else
+        {
+            Debug.LogWarning("No empty weapon slot available for laser");
+        }
+    }
+    else
+    {
+        laserUnlocked = true;
+        laserExpireTime = Time.time + laserDuration;
+    }
+    break;
+}
 
         case "shield":
             shieldLevel += 1;
@@ -246,11 +323,21 @@ public void ApplyUpgrade(string upgradeId)
         "Upgrades => ProjectileBonus: " + projectileBonus +
         " | FireRate x" + fireRateMultiplier +
         " | Damage x" + damageMultiplier +
+        " | Speed: " + speed +
         " | Missile: " + missileUnlocked +
         " | Phaser: " + phaserUnlocked +
         " | Laser: " + laserUnlocked +
         " | Combine: " + combineWeaponsUnlocked
     );
 }
+
+void OnDestroy()
+{
+    if (S == this)
+    {
+        S = null;
+    }
+}
+
 
 }
